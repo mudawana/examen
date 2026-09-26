@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container {
+      width: 100%;
+      max-width: 640px;
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+    }
+    .progress {
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #38bdf8;
+      transition: width 0.3s ease;
+    }
+    .section {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .question {
+      font-size: 1.15rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      white-space: pre-wrap;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem 1.1rem;
+      background: #334155;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .option:hover { background: #3f4f63; }
+    .option.selected {
+      border-color: #38bdf8;
+      background: #0c4a6e33;
+    }
+    .option input { margin-top: 0.2rem; accent-color: #38bdf8; flex-shrink: 0; }
+    .option span { line-height: 1.4; }
+    .btn {
+      width: 100%;
+      padding: 0.9rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #38bdf8;
+      color: #0f172a;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .end {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+    .counter {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="progress"><div class="progress-bar" id="progress"></div></div>
+    <div id="section" class="section"></div>
+    <div id="question" class="question"></div>
+    <div id="options" class="options"></div>
+    <button class="btn" id="nextBtn" disabled>Volgende</button>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        question: "Wat is juist over de samensteller en de aard van dit boek?",
+        options: [
+          "Shaykh Muḥammad ibn ʿAbd al-Wahhāb heeft het zelf als één doorlopende tekst voor beginners geschreven.",
+          "Het is een uitgebreide sharḥ van Shaykh ʿAbdullāh al-Qarʿāwī op Kitāb at-Tawḥīd van Shaykh Muḥammad.",
+          "Shaykh ʿAbdullāh al-Qarʿāwī heeft het samengesteld uit teksten van Shaykh Muḥammad en enkele van zijn nakomelingen.",
+          "Shaykh ʿAbdullāh al-Qarʿāwī heeft het als eigen werk opgesteld, los van de teksten van Shaykh Muḥammad."
+        ]
+      },
+      {
+        section: "Deel 2: De drie fundamenten",
+        question: "\"Laat het eerste waartoe je hen uitnodigt de aanbidding van Allah zijn. Wanneer zij Allah kennen, vertel hun dan dat Allah hun vijf gebeden gedurende hun dag en nacht heeft verplicht.\" [al-Bukhārī en Muslim]\n\nWat leren we volgens de les uit deze woorden van de Profeet ﷺ aan Muʿādh ibn Jabal?",
+        options: [
+          "Tawḥīd is de basis van de daʿwah en komt vóór de andere verplichtingen, zoals het gebed.",
+          "Het gebed is de eerste verplichting, en tawḥīd wordt pas onderwezen nadat men is gaan bidden.",
+          "Alleen bij de Mensen van het Boek begint men met tawḥīd, omdat zij Allah al kennen.",
+          "Men mag de verplichtingen pas noemen wanneer de mensen alle details van de ʿaqīdah beheersen."
+        ]
+      },
+      {
+        question: "\"En Wij hebben vóór jou geen enkele boodschapper gestuurd, of Wij openbaarden aan hem: 'Er is geen god die het recht heeft aanbeden te worden behalve Ik, aanbid Mij daarom.'\" [al-Anbiyāʾ 21:25]\n\nWaarom werd dit vers in de inleiding aangehaald?",
+        options: [
+          "Om aan te tonen dat alle profeten dezelfde sharīʿah en dezelfde voorschriften hadden.",
+          "Om aan te tonen dat alleen Muḥammad ﷺ met tawḥīd al-ulūhiyyah werd gezonden.",
+          "Om aan te tonen dat de eerdere boodschappers alleen tawḥīd ar-rubūbiyyah bevestigden.",
+          "Om aan te tonen dat tawḥīd de kernboodschap van alle boodschappers is."
+        ]
+      },
+      {
+        question: "Welke omschrijving van aṣl (أصل) past bij de uitleg in de les?",
+        options: [
+          "Datgene wat bovenop iets anders wordt gebouwd, zoals een dak op de muren.",
+          "Datgene waarop iets anders wordt gebouwd; de furūʿ bouwen erop voort.",
+          "Een regel die men eerst uit het hoofd leert en pas daarna begrijpt.",
+          "Een tak van kennis die voortbouwt op een groter fundament."
+        ]
+      },
+      {
+        question: "\"De smaak van het geloof heeft geproefd wie tevreden is met Allah als Heer, met de islam als religie en met Muḥammad als Boodschapper.\" [Muslim 34]\n\nWaarom werd deze ḥadīth in de les aangehaald?",
+        options: [
+          "Als bewijs voor de drie rangen van de religie: islām, īmān en iḥsān.",
+          "Als bewijs voor de drie categorieën van tawḥīd.",
+          "Als bewijs dat liefde de eerste voorwaarde van lā ilāha illā Allāh is.",
+          "Omdat hij de drie fundamenten bevat, die ook de drie vragen in het graf zijn."
+        ]
+      },
+      {
+        question: "In welke fase vindt de beproeving van het graf plaats, en wat geldt voor iemand die verdronken of verbrand is?",
+        options: [
+          "In al-Barzakh",
+          "In ʿālam al-arhaam",
+          "Op de Dag der Opstanding",
+          "In ʿālam adh-dharr"
+        ]
+      },
+      {
+        question: "Een bedoeïen zei: \"De voetafdruk wijst op degene die gelopen heeft, en de mest wijst op de kameel. Een hemel vol sterren en een aarde vol wegen, wijzen die niet op de Alhorende, de Alziende?\"\n\nOnder welke categorie bewijzen viel deze uitspraak in de les?",
+        options: [
+          "Aangeboren bewijzen (fiṭrah)",
+          "Bewijzen vanuit de Sharīʿah",
+          "Verstandelijke bewijzen (ʿaql)",
+          "Het verbond van ʿālam adh-dharr"
+        ]
+      },
+      {
+        question: "Wanneer rubūbiyyah en ulūhiyyah samen worden genoemd, welke beschrijving is dan juist?",
+        options: [
+          "Beide betekenen hetzelfde: Allah alleen aanbidden zonder deelgenoot.",
+          "Rubūbiyyah betreft de aanbidding van Allah alleen, en ulūhiyyah Zijn scheppen en besturen.",
+          "Rubūbiyyah betreft Allahs namen en eigenschappen, en ulūhiyyah Zijn scheppen en onderhouden.",
+          "Rubūbiyyah betreft Allah als Schepper, Onderhouder en Bestuurder, en ulūhiyyah het aanbidden van Hem alleen."
+        ]
+      },
+      {
+        question: "Vul de definitie van de islam in de matn aan:\n\n\"Zich overgeven aan Allah door (…), zich aan Hem onderwerpen door (…), en zich vrijmaken van (…).\"",
+        options: [
+          "tawḥīd / gehoorzaamheid / shirk en haar mensen",
+          "gehoorzaamheid / tawḥīd / shirk en haar mensen",
+          "tawḥīd / gehoorzaamheid / zonden en hun mensen",
+          "geloof / aanbidding / ongeloof en zijn mensen"
+        ]
+      },
+      {
+        question: "Welke uitspraken zijn juist volgens de les?\n\nI. De algemene betekenis van islam is de religie van alle boodschappers; de specifieke betekenis is de religie waarmee Muḥammad ﷺ is gezonden.\nII. Het woord islām betekent in de kern \"vrede\", en daarmee is de betekenis volledig uitgelegd.\nIII. De vrijverklaring (barāʾah) van shirk geschiedt met het hart, de tong en de ledematen.",
+        options: [
+          "Alleen I",
+          "I en III",
+          "II en III",
+          "I, II en III"
+        ]
+      },
+      {
+        question: "Hoeveel zuilen heeft iḥsān, en wat houdt het in?",
+        options: [
+          "Twee zuilen: dat je Allah aanbidt alsof je Hem ziet, en dat je weet dat Hij jou ziet.",
+          "Zes zuilen, net als īmān, omdat iḥsān de hoogste rang van īmān is.",
+          "Eén zuil: dat je Allah aanbidt alsof je Hem ziet, en als jij Hem niet ziet, dan ziet Hij jou wel.",
+          "Vijf zuilen, net als islām, maar verricht op de meest volmaakte manier."
+        ]
+      },
+      {
+        question: "Welke uitspraak over de afkomst van de Profeet ﷺ is juist volgens de les?",
+        options: [
+          "De profeet stamt uiteindelijk af van Ismāʿīl.",
+          "Ismāʿīl behoorde tot de oorspronkelijke Arabieren; het Arabisch was vanaf zijn geboorte zijn moedertaal.",
+          "Banū Hāshim zijn een tak van Banū ʿAbd al-Muṭṭalib, en Quraysh stamt af van Hāshim.",
+          "De Profeet ﷺ behoort via zijn moeder tot Banū Hāshim en via zijn vader tot Quraysh."
+        ]
+      },
+      {
+        question: "Welke combinatie over het leven van de Profeet ﷺ is juist?",
+        options: [
+          "Profeet op 40 jaar; ongeveer 10 jaar in Makkah en 13 jaar in Madīnah; overleden op 63.",
+          "Profeet op 40 jaar; ongeveer 13 jaar in Makkah; de vijf gebeden verplicht na de hijrah in Madīnah.",
+          "Profeet op 43 jaar; ongeveer 10 jaar in Makkah; de vijf gebeden verplicht tijdens al-Isrāʾ wa-l-Miʿrāj.",
+          "Profeet op 40 jaar; ongeveer 13 jaar in Makkah; de vijf gebeden verplicht tijdens al-Isrāʾ wa-l-Miʿrāj."
+        ]
+      },
+      {
+        section: "Deel 3: Aṣl ad-dīn en zijn fundament",
+        question: "Welk onderdeel behoort tot het tweede bevel en niet tot het eerste?",
+        options: [
+          "Het oproepen tot de aanbidding van Allah alleen",
+          "Loyaliteit tonen op basis van tawḥīd",
+          "Hardhandig optreden en vijandschap tonen op basis van deze kwestie",
+          "Het ongelovig verklaren van degene die deze kwestie de rug toekeert"
+        ]
+      },
+      {
+        question: "Welke nuance werd in de les benadrukt bij de onderdelen van aṣl ad-dīn?",
+        options: [
+          "Alle genoemde onderdelen zijn in gelijke mate de grondslag zelf; wie er één mist, heeft de grondslag verloren.",
+          "De grondslag is tawḥīd; daʿwah, loyaliteit en takfīr zijn noodzakelijke gevolgen die men niet zomaar gelijkstelt aan de grondslag zelf.",
+          "De grondslag is de daʿwah; tawḥīd en loyaliteit zijn gevolgen die daaruit voortvloeien.",
+          "Takfīr hoort niet bij dit onderwerp; de auteur noemde het slechts als historische opmerking."
+        ]
+      },
+      {
+        question: "In het verhaal over de haan werden de studenten woedend toen bleek dat de man zina met zijn moeder had gepleegd maar ze werden niet even woedend bij.. Wat wilde de shaykh hiermee vooral duidelijk maken?",
+        options: [
+          "Dat shirk ernstiger is dan een grote zonde, terwijl zij om de kabīrah bozer werden dan om shirk.",
+          "Dat men geen oordeel mag vellen voordat een bericht goed onderzocht is.",
+          "Dat zina met een maḥram de grootste zonde is na het doden van een ziel.",
+          "Dat studenten niet om andere lessen mogen vragen zolang de leraar tawḥīd onderwijst."
+        ]
+      },
+      {
+        question: "\"En voorzeker, Wij hebben in iedere gemeenschap een boodschapper gestuurd: 'Aanbid Allah en vermijd de ṭāghūt.'\" [an-Naḥl 16:36]\n\nHoe verhoudt dit vers zich tot de twee zijden van het woord van Tawheed?",
+        options: [
+          "\"Aanbid Allah\" is de ontkenning en \"vermijd de ṭāghūt\" is de bevestiging.",
+          "Beide delen zijn bevestiging; de ontkenning komt elders in de Qurʾān.",
+          "Het vers gaat over tawḥīd ar-rubūbiyyah en niet over de kalimah.",
+          "\"Aanbid Allah\" komt overeen met illā Allāh, en \"vermijd de ṭāghūt\" met lā ilāha."
+        ]
+      },
+      {
+        section: "Deel 4: De voorwaarden van lā ilāha illā Allāh",
+        question: "Wat is een sharṭ (voorwaarde)?",
+        options: [
+          "Zijn aanwezigheid brengt de aanwezigheid van het gevolg mee, en zijn afwezigheid de afwezigheid ervan.",
+          "Zijn afwezigheid brengt de afwezigheid van het gevolg mee, maar zijn aanwezigheid niet noodzakelijk de aanwezigheid ervan.",
+          "Zijn aanwezigheid brengt de aanwezigheid van het gevolg mee, maar zijn afwezigheid niet noodzakelijk de afwezigheid ervan.",
+          "Een onderdeel binnen de handeling zelf, zonder welk de handeling niet geldig is."
+        ]
+      },
+      {
+        question: "Welke uitspraak over het verschil tussen sharṭ en rukn is juist?",
+        options: [
+          "Wuḍūʾ is een rukn van het gebed, omdat het gebed zonder wuḍūʾ ongeldig is.",
+          "Het verschil is dat een sharṭ bij vergeetachtigheid vervalt, en een rukn niet.",
+          "Een sharṭ ligt buiten de handeling (zoals wuḍūʾ), en een rukn is er een deel van (zoals rukūʿ).",
+          "Rukūʿ is een sharṭ, want wie rukūʿ verricht, is daarmee nog niet noodzakelijk aan het bidden."
+        ]
+      },
+      {
+        question: "Hoe hebben de geleerden de voorwaarden van lā ilāha illā Allāh vastgesteld?",
+        options: [
+          "Uit één ḥadīth waarin de Profeet ﷺ de zeven voorwaarden letterlijk opsomt",
+          "Door qiyās: de voorwaarden van het gebed werden toegepast op de shahādah",
+          "Door een overgeleverde ijmāʿ van de Ṣaḥābah waarin de zeven werden opgesomd",
+          "Door istiqrāʾ: het verzamelen en bestuderen van de verschillende teksten"
+        ]
+      },
+      {
+        question: "Wat is al-jahl al-murakkab (samengestelde onwetendheid)?",
+        options: [
+          "Iemand is onwetend, maar beseft dat niet en denkt dat hij het weet.",
+          "Iemand weet iets niet, maar weet en erkent dat hij het niet weet.",
+          "Iemand weet iets wel, maar handelt er niet naar.",
+          "Iemand twijfelt tussen twee meningen en kan geen van beide kiezen."
+        ]
+      },
+      {
+        question: "\"Voorwaar, de gelovigen zijn slechts degenen die in Allah en Zijn Boodschapper geloven en daarna niet twijfelen, en die met hun bezit en hun zielen strijden op de weg van Allah. Zij zijn de waarachtigen.\" [al-Ḥujurāt 49:15]\n\nVoor welke voorwaarde gebruikt de matn dit vers als bewijs?",
+        options: [
+          "Waarachtigheid (aṣ-ṣidq)",
+          "Overgave (al-inqiyād)",
+          "Zekerheid (al-yaqīn)",
+          "Liefde (al-maḥabbah)"
+        ]
+      },
+      {
+        question: "Wat is volgens de les de kern van aṣ-ṣidq bij de shahādah, en welk vers werd genoemd als voorbeeld van het tegenovergestelde?",
+        options: [
+          "Dat men geen twijfel heeft; met al-Ḥajj 22:11 over wie Allah \"op de rand\" aanbidt",
+          "Dat de tong uitspreekt wat werkelijk in het hart leeft; met al-Baqarah 2:8 over de hypocrieten",
+          "Dat men de daad alleen voor Allah verricht; met al-Kahf 18:110 over wie met zijn daden pronkt",
+          "Dat men de waarheid niet uit hoogmoed verwerpt; met aṣ-Ṣāffāt 37:35 over de mushrikūn"
+        ]
+      },
+      {
+        question: "Iemand gelooft innerlijk werkelijk in de shahādah en spreekt die uit. Maar in de moskee maakt hij zijn gebed langer en mooier omdat mensen naar hem kijken.\n\nWelke voorwaarde is hier volgens de les in het bijzonder aangetast?",
+        options: [
+          "Aṣ-ṣidq",
+          "Al-yaqīn",
+          "Al-qabūl",
+          "Al-ikhlāṣ"
+        ]
+      },
+      {
+        question: "Een zuster vindt het dragen van de niqāb zwaar, maar draagt hem toch omdat zij Allah wil gehoorzamen.\n\nHoe werd zo'n situatie in de les beoordeeld?",
+        options: [
+          "Dit is in strijd met de voorwaarde liefde, want 47:9 zegt dat wie iets van de openbaring afkeurt, zijn daden verliest.",
+          "Dit is in strijd met de voorwaarde overgave, omdat ware inqiyād geen enkele moeite toelaat.",
+          "Dit is niet in strijd met de liefde: natuurlijke moeite (vgl. 2:216) is iets anders dan haat voor de openbaring (47:9).",
+          "Dit raakt de voorwaarden niet, omdat die alleen over de uitspraak van de shahādah gaan en niet over daden."
+        ]
+      },
+      {
+        question: "\"En wie zijn gezicht aan Allah overgeeft terwijl hij goeddoet, heeft zich werkelijk vastgegrepen aan het stevigste houvast.\" [Luqmān 31:22]\n\nWaarnaar verwijst \"het stevigste houvast\" volgens de uitleg in de matn?",
+        options: [
+          "De islam in het algemeen, met al haar voorschriften",
+          "De getuigenis lā ilāha illā Allāh",
+          "Het vasthouden aan de Qurʾān en de Sunnah",
+          "De liefde voor Allah en Zijn Boodschapper ﷺ"
+        ]
+      },
+      {
+        question: "\"Voorwaar, wanneer tegen hen werd gezegd: 'Er is geen god die het recht heeft aanbeden te worden behalve Allah', waren zij hoogmoedig. En zij zeiden: 'Zullen wij werkelijk onze goden verlaten vanwege een bezeten dichter?'\" [aṣ-Ṣāffāt 37:35-36]\n\nVoor welke voorwaarde gebruikt de matn dit vers, en wat ontbrak bij hen? (Kies BESTE antwoord).",
+        options: [
+          "Kennis: zij begrepen de betekenis van lā ilāha illā Allāh niet.",
+          "Zekerheid: zij twijfelden of lā ilāha illā Allāh de waarheid was.",
+          "Overgave: zij aanvaardden haar innerlijk, maar handelden er niet naar.",
+          "Acceptatie: zij begrepen de betekenis wel, maar verwierpen haar uit hoogmoed."
+        ]
+      },
+      {
+        question: "Sommige geleerden noemen al-kufr biṭ-ṭāghūt als achtste voorwaarde. Hoe werd dit in de les ingedeeld?",
+        options: [
+          "Het is geen losse achtste voorwaarde, maar een rukn die besloten ligt in de ontkenning (lā ilāha).",
+          "Het is een achtste voorwaarde, gelijkwaardig aan de zeven en los van hen.",
+          "Het is een voorwaarde voor volmaaktheid, niet voor geldigheid.",
+          "Het is een rukn die besloten ligt in de bevestiging (illā Allāh)."
+        ]
+      },
+      {
+        section: "Deel 4: De voorwaarden van lā ilāha illā Allāh (herhaling)",
+        question: "Wat is een sharṭ (voorwaarde)?",
+        options: [
+          "Zijn aanwezigheid brengt de aanwezigheid van het gevolg mee, en zijn afwezigheid de afwezigheid ervan.",
+          "Zijn afwezigheid brengt de afwezigheid van het gevolg mee, maar zijn aanwezigheid niet noodzakelijk de aanwezigheid ervan.",
+          "Zijn aanwezigheid brengt de aanwezigheid van het gevolg mee, maar zijn afwezigheid niet noodzakelijk de afwezigheid ervan.",
+          "Een onderdeel binnen de handeling zelf, zonder welk de handeling niet geldig is."
+        ]
+      },
+      {
+        question: "Welke uitspraak over het verschil tussen sharṭ en rukn is juist?",
+        options: [
+          "Wuḍūʾ is een rukn van het gebed, omdat het gebed zonder wuḍūʾ ongeldig is.",
+          "Het verschil is dat een sharṭ bij vergeetachtigheid vervalt, en een rukn niet.",
+          "Een sharṭ ligt buiten de handeling (zoals wuḍūʾ), en een rukn is er een deel van (zoals rukūʿ).",
+          "Rukūʿ is een sharṭ, want wie rukūʿ verricht, is daarmee nog niet noodzakelijk aan het bidden."
+        ]
+      },
+      {
+        question: "Hoe hebben de geleerden de voorwaarden van lā ilāha illā Allāh vastgesteld?",
+        options: [
+          "Uit één ḥadīth waarin de Profeet ﷺ de zeven voorwaarden letterlijk opsomt",
+          "Door qiyās: de voorwaarden van het gebed werden toegepast op de shahādah",
+          "Door een overgeleverde ijmāʿ van de Ṣaḥābah waarin de zeven werden opgesomd",
+          "Door istiqrāʾ: het verzamelen en bestuderen van de verschillende teksten"
+        ]
+      },
+      {
+        question: "Wat is al-jahl al-murakkab (samengestelde onwetendheid)?",
+        options: [
+          "Iemand is onwetend, maar beseft dat niet en denkt dat hij het weet.",
+          "Iemand weet iets niet, maar weet en erkent dat hij het niet weet.",
+          "Iemand weet iets wel, maar handelt er niet naar.",
+          "Iemand twijfelt tussen twee meningen en kan geen van beide kiezen."
+        ]
+      },
+      {
+        question: "\"Voorwaar, de gelovigen zijn slechts degenen die in Allah en Zijn Boodschapper geloven en daarna niet twijfelen, en die met hun bezit en hun zielen strijden op de weg van Allah. Zij zijn de waarachtigen.\" [al-Ḥujurāt 49:15]\n\nVoor welke voorwaarde gebruikt de matn dit vers als bewijs?",
+        options: [
+          "Waarachtigheid (aṣ-ṣidq)",
+          "Overgave (al-inqiyād)",
+          "Zekerheid (al-yaqīn)",
+          "Liefde (al-maḥabbah)"
+        ]
+      },
+      {
+        question: "Wat is volgens de les de kern van aṣ-ṣidq bij de shahādah, en welk vers werd genoemd als voorbeeld van het tegenovergestelde?",
+        options: [
+          "Dat men geen twijfel heeft; met al-Ḥajj 22:11 over wie Allah \"op de rand\" aanbidt",
+          "Dat de tong uitspreekt wat werkelijk in het hart leeft; met al-Baqarah 2:8 over de hypocrieten",
+          "Dat men de daad alleen voor Allah verricht; met al-Kahf 18:110 over wie met zijn daden pronkt",
+          "Dat men de waarheid niet uit hoogmoed verwerpt; met aṣ-Ṣāffāt 37:35 over de mushrikūn"
+        ]
+      },
+      {
+        question: "Iemand gelooft innerlijk werkelijk in de shahādah en spreekt die uit. Maar in de moskee maakt hij zijn gebed langer en mooier omdat mensen naar hem kijken.\n\nWelke voorwaarde is hier volgens de les in het bijzonder aangetast?",
+        options: [
+          "Aṣ-ṣidq",
+          "Al-yaqīn",
+          "Al-qabūl",
+          "Al-ikhlāṣ"
+        ]
+      },
+      {
+        question: "Een zuster vindt het dragen van de niqāb zwaar, maar draagt hem toch omdat zij Allah wil gehoorzamen.\n\nHoe werd zo'n situatie in de les beoordeeld?",
+        options: [
+          "Dit is in strijd met de voorwaarde liefde, want 47:9 zegt dat wie iets van de openbaring afkeurt, zijn daden verliest.",
+          "Dit is in strijd met de voorwaarde overgave, omdat ware inqiyād geen enkele moeite toelaat.",
+          "Dit is niet in strijd met de liefde: natuurlijke moeite (vgl. 2:216) is iets anders dan haat voor de openbaring (47:9).",
+          "Dit raakt de voorwaarden niet, omdat die alleen over de uitspraak van de shahādah gaan en niet over daden."
+        ]
+      },
+      {
+        question: "\"En wie zijn gezicht aan Allah overgeeft terwijl hij goeddoet, heeft zich werkelijk vastgegrepen aan het stevigste houvast.\" [Luqmān 31:22]\n\nWaarnaar verwijst \"het stevigste houvast\" volgens de uitleg in de matn?",
+        options: [
+          "De islam in het algemeen, met al haar voorschriften",
+          "De getuigenis lā ilāha illā Allāh",
+          "Het vasthouden aan de Qurʾān en de Sunnah",
+          "De liefde voor Allah en Zijn Boodschapper ﷺ"
+        ]
+      },
+      {
+        question: "\"Voorwaar, wanneer tegen hen werd gezegd: 'Er is geen god die het recht heeft aanbeden te worden behalve Allah', waren zij hoogmoedig. En zij zeiden: 'Zullen wij werkelijk onze goden verlaten vanwege een bezeten dichter?'\" [aṣ-Ṣāffāt 37:35-36]\n\nVoor welke voorwaarde gebruikt de matn dit vers, en wat ontbrak bij hen? (Kies BESTE antwoord).",
+        options: [
+          "Kennis: zij begrepen de betekenis van lā ilāha illā Allāh niet.",
+          "Zekerheid: zij twijfelden of lā ilāha illā Allāh de waarheid was.",
+          "Overgave: zij aanvaardden haar innerlijk, maar handelden er niet naar.",
+          "Acceptatie: zij begrepen de betekenis wel, maar verwierpen haar uit hoogmoed."
+        ]
+      },
+      {
+        question: "Sommige geleerden noemen al-kufr biṭ-ṭāghūt als achtste voorwaarde. Hoe werd dit in de les ingedeeld?",
+        options: [
+          "Het is geen losse achtste voorwaarde, maar een rukn die besloten ligt in de ontkenning (lā ilāha).",
+          "Het is een achtste voorwaarde, gelijkwaardig aan de zeven en los van hen.",
+          "Het is een voorwaarde voor volmaaktheid, niet voor geldigheid.",
+          "Het is een rukn die besloten ligt in de bevestiging (illā Allāh)."
+        ]
+      }
+    ];
+
+    let current = 0;
+    let selected = null;
+
+    const progressEl = document.getElementById('progress');
+    const sectionEl = document.getElementById('section');
+    const questionEl = document.getElementById('question');
+    const optionsEl = document.getElementById('options');
+    const nextBtn = document.getElementById('nextBtn');
+    const counterEl = document.getElementById('counter');
+    const app = document.getElementById('app');
+
+    function render() {
+      if (current >= questions.length) {
+        app.innerHTML = '<div class="end"></div>';
+        return;
+      }
+
+      const q = questions[current];
+      progressEl.style.width = ((current / questions.length) * 100) + '%';
+      sectionEl.textContent = q.section || '';
+      questionEl.textContent = q.question;
+      counterEl.textContent = (current + 1) + ' / ' + questions.length;
+
+      optionsEl.innerHTML = '';
+      selected = null;
+      nextBtn.disabled = true;
+
+      q.options.forEach((opt, i) => {
+        const label = document.createElement('label');
+        label.className = 'option';
+        label.innerHTML = `<input type="radio" name="opt" value="${i}"><span>${opt}</span>`;
+        label.addEventListener('click', () => {
+          document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+          label.classList.add('selected');
+          selected = i;
+          nextBtn.disabled = false;
+        });
+        optionsEl.appendChild(label);
+      });
+    }
+
+    nextBtn.addEventListener('click', () => {
+      if (selected === null) return;
+      current++;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
